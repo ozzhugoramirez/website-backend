@@ -2,6 +2,8 @@ import os
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from uuid import uuid4
+from django.utils import timezone
+import datetime
 
 def user_avatar_upload_path(instance, filename):
     ext = os.path.splitext(filename)[1].lower() or ".jpg"
@@ -104,3 +106,14 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+    
+    @property
+    def is_online(self):
+        if self.last_login:
+            return timezone.now() - self.last_login < datetime.timedelta(minutes=15)
+        return False
+
+    @property
+    def total_purchases(self):
+        
+        return 0

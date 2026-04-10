@@ -19,6 +19,9 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 RECAPTCHA_SECRET_KEY = config('RECAPTCHA_SECRET_KEY')
 
 
+
+
+
 SITE_ID = 1
 DJANGO_APPS = [
     'storages',
@@ -141,8 +144,9 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip() for origin in FRONTEND_URLS.split(',')
 ]
 
-CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOW_CREDENTIALS = True
+#CORS_ALLOW_ALL_ORIGINS = False
+#CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -162,15 +166,21 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
+# settings.py
+
+# 1. Configuramos las rutas locales de media (ESTO ES VITAL)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# 2. Tu lógica de Storage ajustada para local
 GS_BUCKET_NAME = config('GS_BUCKET_NAME', default='')
 
-if GS_BUCKET_NAME:
+# Solo activamos Google Cloud si hay un bucket y NO estamos en DEBUG (local)
+if GS_BUCKET_NAME and not DEBUG:
     google_creds = config('GOOGLE_APPLICATION_CREDENTIALS', default='')
-    
     
     if google_creds.startswith('{'):
         credenciales_path = os.path.join(BASE_DIR, 'google-creds-temp.json')
-        
         with open(credenciales_path, 'w') as archivo:
             archivo.write(google_creds)
     else:
@@ -186,4 +196,13 @@ if GS_BUCKET_NAME:
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
-
+else:
+    # 🏠 CONFIGURACIÓN PARA DESARROLLO LOCAL
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }

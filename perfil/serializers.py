@@ -4,28 +4,50 @@ from .models import Profile
 
 User = get_user_model()
 
-class ProfileUpdateSerializer(serializers.ModelSerializer):
-    """ Serializador para cuando queramos editar el perfil (ej. sumar coins o cambiar teléfono) """
+# --------------------------------------------------------
+# 1. SERIALIZADOR COMPLETO DEL PERFIL (Para el Drawer)
+# --------------------------------------------------------
+class ProfileDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['phone', 'address', 'city', 'coins']
+        # Excluimos 'user' porque ya va a estar anidado
+        exclude = ['user', 'id']
 
-class CustomerListSerializer(serializers.ModelSerializer):
-    """ Serializador que combina datos del Usuario y su Perfil para la tabla del Dashboard """
-    
-    # Extraemos campos del Profile asociado
-    coins = serializers.DecimalField(source='profile.coins', max_digits=10, decimal_places=2, read_only=True)
-    phone = serializers.CharField(source='profile.phone', read_only=True)
-    
-    # Formateamos la fecha de creación del perfil para que Next.js no tenga que lidiar con fechas feas
-    registro = serializers.DateTimeField(source='profile.created_at', format="%d/%m/%Y", read_only=True)
-    
-    # Unimos el nombre para facilitar las cosas en el frontend
-    full_name = serializers.SerializerMethodField()
+class CustomerDetailSerializer(serializers.ModelSerializer):
+    """ Este manda absolutamente toda la data del cliente al panel lateral """
+    profile = ProfileDetailSerializer(read_only=True)
+    full_name = serializers.CharField(source='get_full_name', read_only=True)
+    is_online = serializers.BooleanField(read_only=True)
+    compras_totales = serializers.IntegerField(source='total_purchases', read_only=True)
+
+    date_joined = serializers.DateTimeField(source='profile.created_at', read_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'full_name', 'coins', 'phone', 'registro', 'is_active']
-        
-    def get_full_name(self, obj):
-        return obj.get_full_name()
+        fields = [
+            'id', 'email', 'full_name', 'is_active', 'date_joined',  'date_joined',
+            'last_login', 'is_online', 'compras_totales', 'profile'
+        ]
+
+# --------------------------------------------------------
+# 2. SERIALIZADOR RESUMIDO 
+# --------------------------------------------------------
+class CustomerListSerializer(serializers.ModelSerializer):
+    """ Este es liviano para no saturar la red si tenés 5000 clientes """
+    coins = serializers.DecimalField(source='profile.coins', max_digits=10, decimal_places=2, read_only=True)
+    phone = serializers.CharField(source='profile.phone', read_only=True)
+    ranking = serializers.CharField(source='profile.ranking', read_only=True)
+    full_name = serializers.CharField(source='get_full_name', read_only=True)
+    is_online = serializers.BooleanField(read_only=True)
+    compras_totales = serializers.IntegerField(source='total_purchases', read_only=True)
+
+   
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'full_name', 'coins', 'phone',
+            'is_active', 'compras_totales', 'ranking', 'is_online'
+        ]
+
+
