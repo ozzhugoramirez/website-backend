@@ -1,8 +1,5 @@
 from django.urls import path
-from .views import (
-    PublicProductListView, PublicProductDetailView, ProductLikeToggleView,
-    DashboardProductListCreateView, DashboardProductDetailUpdateDeleteView
-)
+from .views import *
 
 urlpatterns = [
     # ---- RUTAS PÚBLICAS (TIENDA NEXT.JS) ----
@@ -13,4 +10,8 @@ urlpatterns = [
     # ---- RUTAS PRIVADAS (DASHBOARD) ----
     path('dashboard/products/', DashboardProductListCreateView.as_view(), name='dash_product_list'),
     path('dashboard/products/<int:pk>/', DashboardProductDetailUpdateDeleteView.as_view(), name='dash_product_detail'),
+    # ... tus otras rutas del dashboard ...
+    path('dashboard/images/', DashboardImageUploadView.as_view(), name='dash_image_upload'),
+    path('dashboard/images/<int:pk>/', DashboardImageDeleteView.as_view(), name='dash_image_delete'),
+    path('dashboard/images/<int:pk>/set-main/', DashboardImageSetMainView.as_view(), name='dash_image_set_main'),
 ]

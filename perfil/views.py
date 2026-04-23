@@ -39,3 +39,16 @@ class CustomerBulkDeleteAPIView(APIView):
 
         User.objects.filter(id__in=user_ids, role='CUS').delete()
         return Response({"message": "Clientes eliminados exitosamente"}, status=status.HTTP_200_OK)
+
+
+
+from rest_framework.permissions import IsAuthenticated
+
+class CurrentUserAPIView(APIView):
+   
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        serializer = UserMeSerializer(user)
+        return Response(serializer.data)

@@ -51,3 +51,19 @@ class CustomerListSerializer(serializers.ModelSerializer):
         ]
 
 
+class ProfileMeSerializer(serializers.ModelSerializer):
+    ranking = serializers.CharField(read_only=True)
+    
+    class Meta:
+        model = Profile
+        
+        exclude = ['user', 'id', 'notes']
+
+class UserMeSerializer(serializers.ModelSerializer):
+    """ Serializador para que el cliente vea sus propios datos """
+    profile = ProfileMeSerializer(read_only=True)
+    full_name = serializers.CharField(source='get_full_name', read_only=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'full_name', 'first_name', 'last_name', 'profile']

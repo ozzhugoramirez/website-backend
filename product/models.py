@@ -64,5 +64,11 @@ class ProductImage(models.Model):
     image = models.ImageField(upload_to='products/')
     is_main = models.BooleanField(default=False) # Para marcar cuál es la foto de portada
 
+    def save(self, *args, **kwargs):
+        
+        if self.is_main:
+            ProductImage.objects.filter(product=self.product).update(is_main=False)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"Imagen de {self.product.name}"

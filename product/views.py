@@ -3,13 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import Product
-from .serializers import ProductSerializer
-from user.permissions import IsDashboardStaff # El permiso que creamos antes
+from .models import *
+from .serializers import *
+from user.permissions import IsDashboardStaff 
 from rest_framework.permissions import IsAuthenticated
-# =======================================================
-# 🌐 VISTAS PÚBLICAS (Para los clientes en la tienda)
-# =======================================================
+from rest_framework.parsers import MultiPartParser, FormParser
+
 
 class PublicProductListView(generics.ListAPIView):
     """ Lista solo productos activos para la tienda """
@@ -17,21 +16,19 @@ class PublicProductListView(generics.ListAPIView):
     permission_classes = [] 
 
     def get_queryset(self):
-        # Le agregamos el order_by para que los más nuevos salgan primero y Django no se queje
         return Product.objects.filter(is_active=True).select_related('category').prefetch_related('images').order_by('-created_at')
 
 class PublicProductDetailView(generics.RetrieveAPIView):
     """ Detalle del producto. Al consultarlo, suma +1 a las vistas """
     serializer_class = ProductSerializer
     permission_classes = []
-    lookup_field = 'slug' # Buscamos por URL amigable, no por ID
+    lookup_field = 'slug'
 
     def get_queryset(self):
         return Product.objects.filter(is_active=True).select_related('category').prefetch_related('images')
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        # 📈 Sumamos una vista cada vez que alguien entra a la página del producto
         instance.views += 1
         instance.save(update_fields=['views'])
         
@@ -55,7 +52,7 @@ class ProductLikeToggleView(APIView):
 
 
 # =======================================================
-# 🛡️ VISTAS DEL DASHBOARD (Para empleados/Admin)
+#  VISTAS DEL DASHBOARD (Para empleados/Admin)
 # =======================================================
 
 class DashboardProductListCreateView(generics.ListCreateAPIView):
@@ -72,4 +69,28 @@ class DashboardProductDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIVi
     serializer_class = ProductSerializer
     permission_classes = [IsDashboardStaff]
     queryset = Product.objects.all()
-    # Acá sí buscamos por ID, que es más seguro para un panel de administración
+   
+
+
+
+class DashboardImageUploadView(generics.CreateAPIView):
+    """ Permite subir una imagen asociada a un producto """
+    queryset = ProductImage.objects.all()
+    serializer_class = ProductImageSerializer
+    permission_classes = [IsDashboardStaff]
+    parser_classes = (MultiPartParser, FormParser) 
+
+class DashboardImageDeleteView(generics.DestroyAPIView):
+    """ Elimina una imagen """
+    queryset = ProductImage.objects.all()
+    permission_classes = [IsDashboardStaff]
+
+class DashboardImageSetMainView(APIView):
+    """ Marca una imagen como principal """
+    permission_classes = [IsDashboardStaff]
+
+    def post(self, request, pk):
+        image = get_object_or_404(ProductImage, id=pk)
+        image.is_main = True
+        image.save() 
+        return Response({"message": "Imagen marcada como principal"}, status=status.HTTP_200_OK)
